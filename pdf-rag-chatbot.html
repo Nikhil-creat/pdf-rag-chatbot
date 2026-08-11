@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Archive — Ask Your Documents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --paper:#efe7d8;
+    --paper-dark:#e1d6bb;
+    --card:#f8f2e4;
+    --ink:#232840;
+    --ink-soft:#585d78;
+    --brass:#9c7a3c;
+    --brass-light:#c7a668;
+    --burgundy:#7a2e35;
+    --rule:#c9bd9c;
+    --shadow: 0 1px 2px rgba(35,40,64,.08), 0 4px 14px rgba(35,40,64,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(35,40,64,.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Source Serif 4', serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  ::selection{ background:var(--brass-light); color:var(--ink); }
+
+  .wrap{ max-width:1000px; margin:0 auto; padding:28px 20px 0; }
+
+  header.top{ text-align:center; margin-bottom:34px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--brass);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before, .eyebrow::after{ content:""; width:22px; height:1px; background:var(--rule); }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(34px, 6vw, 54px);
+    margin:10px 0 6px;
+    letter-spacing:-.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-style:italic;
+    font-size:15px;
+    margin:0;
+  }
+
+  /* ---------- Upload / shelf ---------- */
+  .desk{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    padding:22px;
+    margin-bottom:24px;
+    position:relative;
+  }
+  .desk::before{
+    content:"";
+    position:absolute; top:8px; left:8px; right:8px; bottom:8px;
+    border:1px solid rgba(156,122,60,.25);
+    border-radius:2px;
+    pointer-events:none;
+  }
+  .drop{
+    border:1.5px dashed var(--rule);
+    border-radius:3px;
+    padding:26px 16px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.drag{ border-color:var(--brass); background:rgba(156,122,60,.06); }
+  .drop .lbl{ font-family:'Fraunces', serif; font-size:18px; }
+  .drop .hint{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin-top:6px; letter-spacing:.03em; }
+  input[type=file]{ display:none; }
+
+  .shelf{
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;
+  }
+  .book{
+    background:var(--ink);
+    color:var(--paper);
+    width:64px; min-height:110px;
+    border-radius:2px 5px 5px 2px;
+    padding:10px 6px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    box-shadow: 2px 2px 0 rgba(35,40,64,.15), var(--shadow);
+    position:relative;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+  .book .name{ font-size:11px; line-height:1.3; }
+  .book .meta{ font-size:9px; color:var(--brass-light); writing-mode: horizontal-tb; text-orientation: initial; }
+  .book .rm{
+    writing-mode: horizontal-tb;
+    position:absolute; top:2px; right:4px;
+    background:none; border:none; color:var(--paper); opacity:.55; cursor:pointer; font-size:13px; padding:2px;
+  }
+  .book .rm:hover{ opacity:1; color:var(--burgundy); }
+  .book.parsing{ opacity:.5; }
+  .book .pct{ writing-mode: horizontal-tb; font-size:9px; color:var(--brass-light); }
+
+  /* ---------- settings ticket ---------- */
+  .settings{
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule);
+    display:flex; flex-wrap:wrap; gap:22px; align-items:center;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+  }
+  .settings label{ display:flex; flex-direction:column; gap:4px; }
+  .settings input[type=range]{ width:120px; accent-color:var(--brass); }
+  .settings .val{ color:var(--ink); font-weight:600; }
+
+  /* ---------- reading desk (chat + drawer) ---------- */
+  .reading{
+    display:none;
+    grid-template-columns: 300px 1fr;
+    gap:18px;
+  }
+  .reading.show{ display:grid; }
+  @media (max-width: 760px){ .reading.show{ grid-template-columns: 1fr; } }
+
+  .drawer{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:16px;
+    box-shadow:var(--shadow);
+    min-height:200px;
+  }
+  .drawer h3{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; text-transform:uppercase; letter-spacing:.14em;
+    color:var(--brass); margin:0 0 12px;
+  }
+  .drawer .empty{ color:var(--ink-soft); font-style:italic; font-size:13px; }
+  .idxcard{
+    background:#fffdf7;
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:10px 12px;
+    margin-bottom:12px;
+    position:relative;
+    box-shadow: 1px 1px 0 rgba(35,40,64,.06);
+    cursor:pointer;
+  }
+  .idxcard:hover{ border-color:var(--brass); }
+  .idxcard .top{
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .idxcard .stamp{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:10px;
+    color:var(--burgundy);
+    border:1.5px solid var(--burgundy);
+    border-radius:3px;
+    padding:1px 6px;
+    transform:rotate(-4deg);
+    display:inline-block;
+    opacity:.85;
+  }
+  .idxcard .excerpt{ font-size:12.5px; line-height:1.5; color:var(--ink); }
+  .idxcard::before{
+    content:"";
+    position:absolute; left:0; top:10%; bottom:10%; width:3px;
+    background:var(--brass-light);
+    border-radius:2px;
+  }
+
+  .chatcol{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    box-shadow:var(--shadow);
+    display:flex; flex-direction:column;
+    min-height:460px;
+  }
+  .chat{
+    flex:1;
+    padding:18px;
+    overflow-y:auto;
+    max-height:520px;
+  }
+  .msg{ margin-bottom:16px; max-width:88%; }
+  .msg.user{ margin-left:auto; text-align:right; }
+  .bubble{
+    display:inline-block;
+    padding:10px 14px;
+    border-radius:3px;
+    font-size:14.5px;
+    line-height:1.55;
+    text-align:left;
+  }
+  .msg.user .bubble{ background:var(--ink); color:var(--paper); border-radius:8px 8px 2px 8px; }
+  .msg.bot .bubble{ background:#fffdf7; border:1px solid var(--rule); border-radius:8px 8px 8px 2px; }
+  .msg .who{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;
+  }
+  .msg.bot .cite{ color:var(--brass); font-weight:600; }
+  .typing{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); font-style:italic; }
+
+  .inputrow{
+    border-top:1px solid var(--rule);
+    padding:12px 14px;
+    display:flex; gap:10px;
+  }
+  .inputrow input{
+    flex:1;
+    font-family:'Source Serif 4', serif;
+    font-size:14.5px;
+    border:1px solid var(--rule);
+    border-radius:3px;
+    padding:10px 12px;
+    background:#fffdf7;
+    color:var(--ink);
+  }
+  .inputrow input:focus{ outline:2px solid var(--brass-light); outline-offset:1px; }
+  .inputrow button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; letter-spacing:.05em;
+    background:var(--ink); color:var(--paper);
+    border:none; border-radius:3px;
+    padding:0 18px; cursor:pointer;
+  }
+  .inputrow button:disabled{ opacity:.4; cursor:not-allowed; }
+  .inputrow button:hover:not(:disabled){ background:var(--burgundy); }
+
+  .empty-state{
+    text-align:center; color:var(--ink-soft); font-style:italic; font-size:14px;
+    padding:60px 20px;
+  }
+
+  /* modal */
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(35,40,64,.45);
+    align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{
+    background:#fffdf7; max-width:560px; width:100%; max-height:80vh; overflow-y:auto;
+    border-radius:4px; padding:22px; box-shadow:var(--shadow);
+    font-size:14px; line-height:1.6;
+  }
+  .modal h4{ font-family:'Fraunces', serif; margin-top:0; }
+  .modal button{
+    margin-top:14px; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    background:var(--ink); color:var(--paper); border:none; border-radius:3px;
+    padding:8px 14px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">RAG · Retrieval-Augmented Generation</span>
+    <h1 class="title">The Archive</h1>
+    <p class="sub">Upload documents, and ask them anything.</p>
+  </header>
+
+  <section class="desk">
+    <div class="drop" id="drop">
+      <div class="lbl">Drop PDFs here, or tap to browse</div>
+      <div class="hint">TEXT IS EXTRACTED, CHUNKED &amp; INDEXED LOCALLY IN YOUR BROWSER</div>
+      <input type="file" id="file" accept="application/pdf" multiple />
+    </div>
+
+    <div class="shelf" id="shelf"></div>
+
+    <div class="settings">
+      <label>Chunk size
+        <input type="range" id="chunkSize" min="300" max="1400" step="100" value="700">
+        <span class="val" id="chunkSizeVal">700 chars</span>
+      </label>
+      <label>Passages retrieved (top-k)
+        <input type="range" id="topk" min="1" max="8" step="1" value="4">
+        <span class="val" id="topkVal">4</span>
+      </label>
+      <label>Chunks indexed
+        <span class="val" id="chunkCount">0</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="reading" id="reading">
+    <div class="drawer">
+      <h3>Catalog Drawer</h3>
+      <div id="cards"><div class="empty">Ask a question — the most relevant passages will surface here, stamped with their match strength.</div></div>
+    </div>
+
+    <div class="chatcol">
+      <div class="chat" id="chat">
+        <div class="empty-state">No questions asked yet. Try: "What is this document about?"</div>
+      </div>
+      <div class="inputrow">
+        <input type="text" id="q" placeholder="Ask the archive..." />
+        <button id="ask">ASK →</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h4 id="modalTitle">Passage</h4>
+    <div id="modalBody"></div>
+    <button onclick="document.getElementById('modalBg').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+// ---------------- state ----------------
+let docs = [];      // {id, name, pages: n}
+let chunks = [];     // {docName, page, text, tf: Map, norm}
+let df = new Map();  // term -> doc(chunk) frequency
+let N = 0;
+let history = [];    // chat turns {role, content}
+
+const STOP = new Set("a an the is are was were be been being of to in on for and or but with as at by from this that these those it its into over under again further then once here there all any both each few more most other some such no nor not only own same so than too very can will just don should now i you he she they we".split(" "));
+
+function tokenize(text){
+  return (text.toLowerCase().match(/[a-z0-9]+/g) || []).filter(t => t.length>1 && !STOP.has(t));
+}
+
+function chunkText(fullText, size){
+  const overlap = Math.round(size*0.15);
+  const out = [];
+  let i = 0;
+  while(i < fullText.length){
+    out.push(fullText.slice(i, i+size));
+    i += (size - overlap);
+  }
+  return out;
+}
+
+function rebuildIndex(){
+  // recompute df and tf-idf norms
+  df = new Map();
+  for(const c of chunks){
+    const terms = new Set(tokenize(c.text));
+    for(const t of terms) df.set(t, (df.get(t)||0)+1);
+  }
+  N = chunks.length;
+  for(const c of chunks){
+    const toks = tokenize(c.text);
+    const tf = new Map();
+    for(const t of toks) tf.set(t, (tf.get(t)||0)+1);
+    let norm = 0;
+    const vec = new Map();
+    for(const [t, f] of tf){
+      const idf = Math.log((N+1)/((df.get(t)||1)+0.5));
+      const w = f * idf;
+      vec.set(t, w);
+      norm += w*w;
+    }
+    c.vec = vec;
+    c.norm = Math.sqrt(norm) || 1e-9;
+  }
+  document.getElementById('chunkCount').textContent = chunks.length;
+}
+
+function scoreQuery(query, k){
+  const toks = tokenize(query);
+  const tf = new Map();
+  for(const t of toks) tf.set(t, (tf.get(t)||0)+1);
+  const qvec = new Map();
+  let qnorm = 0;
+  for(const [t,f] of tf){
+    const idf = Math.log((N+1)/((df.get(t)||1)+0.5));
+    const w = f*idf;
+    qvec.set(t, w);
+    qnorm += w*w;
+  }
+  qnorm = Math.sqrt(qnorm) || 1e-9;
+
+  const scored = chunks.map(c => {
+    let dot = 0;
+    for(const [t,w] of qvec){
+      if(c.vec.has(t)) dot += w * c.vec.get(t);
+    }
+    const sim = dot / (qnorm * c.norm);
+    return {chunk:c, sim};
+  });
+  scored.sort((a,b)=>b.sim-a.sim);
+  return scored.slice(0,k);
+}
+
+// ---------------- PDF handling ----------------
+const shelf = document.getElementById('shelf');
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+
+drop.addEventListener('click', ()=>fileInput.click());
+['dragover'].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+drop.addEventListener('drop', e=>{ handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e=>handleFiles(e.target.files));
+
+async function handleFiles(fileList){
+  for(const f of fileList){
+    if(f.type !== 'application/pdf') continue;
+    await addBook(f);
+  }
+}
+
+async function addBook(file){
+  const id = 'd'+Date.now()+Math.random().toString(36).slice(2,6);
+  const bookEl = document.createElement('div');
+  bookEl.className = 'book parsing';
+  bookEl.innerHTML = `<button class="rm" title="remove" style="display:none">×</button><div class="name">${escapeHtml(file.name.replace(/\.pdf$/i,''))}</div><div class="pct">reading…</div>`;
+  shelf.appendChild(bookEl);
+
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    const chunkSize = parseInt(document.getElementById('chunkSize').value,10);
+    let added = 0;
+    for(let p=1; p<=pdf.numPages; p++){
+      bookEl.querySelector('.pct').textContent = `p.${p}/${pdf.numPages}`;
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const text = content.items.map(it=>it.str).join(' ').replace(/\s+/g,' ').trim();
+      if(!text) continue;
+      const pieces = chunkText(text, chunkSize);
+      for(const piece of pieces){
+        if(piece.trim().length < 40) continue;
+        chunks.push({docName:file.name.replace(/\.pdf$/i,''), page:p, text:piece.trim()});
+        added++;
+      }
+    }
+    docs.push({id, name:file.name, pages:pdf.numPages});
+    bookEl.classList.remove('parsing');
+    bookEl.querySelector('.pct').textContent = `${pdf.numPages}p · ${added} idx`;
+    bookEl.querySelector('.rm').style.display = '';
+    bookEl.querySelector('.rm').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      chunks = chunks.filter(c=>c.docName !== file.name.replace(/\.pdf$/i,''));
+      docs = docs.filter(d=>d.id!==id);
+      bookEl.remove();
+      rebuildIndex();
+      toggleReading();
+    });
+    rebuildIndex();
+    toggleReading();
+  }catch(err){
+    bookEl.querySelector('.pct').textContent = 'failed';
+    console.error(err);
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toggleReading(){
+  document.getElementById('reading').classList.toggle('show', chunks.length>0);
+}
+
+// settings live labels
+const chunkSizeSlider = document.getElementById('chunkSize');
+chunkSizeSlider.addEventListener('input', ()=>{
+  document.getElementById('chunkSizeVal').textContent = chunkSizeSlider.value + ' chars';
+});
+const topkSlider = document.getElementById('topk');
+topkSlider.addEventListener('input', ()=>{
+  document.getElementById('topkVal').textContent = topkSlider.value;
+});
+
+// ---------------- chat / retrieval / generation ----------------
+const chatEl = document.getElementById('chat');
+const cardsEl = document.getElementById('cards');
+const qInput = document.getElementById('q');
+const askBtn = document.getElementById('ask');
+
+qInput.addEventListener('keydown', e=>{ if(e.key==='Enter') doAsk(); });
+askBtn.addEventListener('click', doAsk);
+
+function renderCards(results){
+  if(results.length===0){
+    cardsEl.innerHTML = '<div class="empty">No indexed passages yet.</div>';
+    return;
+  }
+  cardsEl.innerHTML = '';
+  results.forEach((r,i)=>{
+    const pct = Math.max(0, Math.min(100, Math.round(r.sim*100)));
+    const div = document.createElement('div');
+    div.className = 'idxcard';
+    div.innerHTML = `
+      <div class="top">
+        <span>${escapeHtml(r.chunk.docName)} · p.${r.chunk.page}</span>
+        <span class="stamp">${pct}% match</span>
+      </div>
+      <div class="excerpt">${escapeHtml(r.chunk.text.slice(0,140))}${r.chunk.text.length>140?'…':''}</div>
+    `;
+    div.addEventListener('click', ()=>{
+      document.getElementById('modalTitle').textContent = `${r.chunk.docName} — page ${r.chunk.page}`;
+      document.getElementById('modalBody').textContent = r.chunk.text;
+      document.getElementById('modalBg').classList.add('show');
+    });
+    cardsEl.appendChild(div);
+  });
+}
+
+function addMsg(role, html){
+  if(chatEl.querySelector('.empty-state')) chatEl.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role==='user'?'user':'bot');
+  div.innerHTML = `<div class="who">${role==='user'?'You':'Archive'}</div><div class="bubble">${html}</div>`;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return div;
+}
+
+async function doAsk(){
+  const query = qInput.value.trim();
+  if(!query || chunks.length===0) return;
+  qInput.value = '';
+  askBtn.disabled = true;
+  addMsg('user', escapeHtml(query));
+
+  const k = parseInt(topkSlider.value,10);
+  const results = scoreQuery(query, k);
+  renderCards(results);
+
+  const thinking = addMsg('bot', '<span class="typing">consulting the archive…</span>');
+
+  const context = results.map((r,i)=>`[Passage ${i+1} — ${r.chunk.docName}, p.${r.chunk.page}]\n${r.chunk.text}`).join('\n\n');
+  const topSim = results.length? results[0].sim : 0;
+
+  const sys = `You are a research assistant answering questions using ONLY the passages provided below, retrieved from the user's uploaded documents via similarity search. Cite the page(s) you draw from inline like [p.X]. If the passages don't contain enough information to answer, say so plainly rather than guessing. Be concise and direct.
+
+PASSAGES:
+${context}`;
+
+  const convo = history.slice(-6).concat([{role:'user', content:query}]);
+
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1000,
+        system: sys,
+        messages: convo
+      })
+    });
+    const data = await resp.json();
+    let answer = "Sorry, I couldn't generate a response.";
+    if(data && data.content){
+      answer = data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    }
+    thinking.querySelector('.bubble').innerHTML = formatAnswer(answer);
+    history.push({role:'user', content:query});
+    history.push({role:'assistant', content:answer});
+  }catch(err){
+    thinking.querySelector('.bubble').innerHTML = 'Something went wrong reaching the archive assistant. Please try again.';
+    console.error(err);
+  }finally{
+    askBtn.disabled = false;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+}
+
+function formatAnswer(text){
+  let esc = escapeHtml(text);
+  esc = esc.replace(/\[p\.(\d+)\]/g, '<span class="cite">[p.$1]</span>');
+  esc = esc.replace(/\n/g, '<br>');
+  return esc;
+}
+</script>
+</body>
+</html>

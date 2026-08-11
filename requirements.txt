@@ -1,0 +1,7 @@
+streamlit>=1.38
+pdfplumber>=0.11
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+anthropic>=0.34
+python-dotenv>=1.0
+numpy>=1.26
