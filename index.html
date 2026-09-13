@@ -270,6 +270,27 @@
     background:var(--ink); color:var(--paper); border:none; border-radius:3px;
     padding:8px 14px; cursor:pointer;
   }
+
+  /* ---------- developer credit footer ---------- */
+  footer.credit{
+    max-width:1000px; margin:52px auto 0; padding:24px 20px 10px;
+    text-align:center;
+  }
+  footer.credit .rule{
+    width:64px; height:1px; background:var(--rule); margin:0 auto 16px;
+  }
+  footer.credit .name{
+    font-family:'Fraunces', serif; font-style:italic; font-size:15px;
+    color:var(--ink); margin:0 0 6px;
+  }
+  footer.credit .name strong{ font-style:normal; font-weight:600; }
+  footer.credit .links{
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    letter-spacing:.03em; color:var(--ink-soft); margin:0;
+  }
+  footer.credit .links a{ color:var(--brass); text-decoration:none; }
+  footer.credit .links a:hover{ color:var(--burgundy); text-decoration:underline; }
+  footer.credit .links .dot{ color:var(--rule); margin:0 7px; }
 </style>
 </head>
 <body>
@@ -322,6 +343,18 @@
     </div>
   </section>
 </div>
+
+<footer class="credit">
+  <div class="rule"></div>
+  <p class="name">Built by <strong>NIKHIL CHARY SRIRAMOJU</strong></p>
+  <p class="links">
+    <a href="https://github.com/Nikhil-creat" target="_blank" rel="noopener">GitHub</a>
+    <span class="dot">·</span>
+    <a href="https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a" target="_blank" rel="noopener">LinkedIn</a>
+    <span class="dot">·</span>
+    <a href="mailto:nikhilsriramoju66@gmail.com">nikhilsriramoju66@gmail.com</a>
+  </p>
+</footer>
 
 <div class="modal-bg" id="modalBg">
   <div class="modal">
@@ -549,50 +582,4 @@ async function doAsk(){
 
   const thinking = addMsg('bot', '<span class="typing">consulting the archive…</span>');
 
-  const context = results.map((r,i)=>`[Passage ${i+1} — ${r.chunk.docName}, p.${r.chunk.page}]\n${r.chunk.text}`).join('\n\n');
-  const topSim = results.length? results[0].sim : 0;
-
-  const sys = `You are a research assistant answering questions using ONLY the passages provided below, retrieved from the user's uploaded documents via similarity search. Cite the page(s) you draw from inline like [p.X]. If the passages don't contain enough information to answer, say so plainly rather than guessing. Be concise and direct.
-
-PASSAGES:
-${context}`;
-
-  const convo = history.slice(-6).concat([{role:'user', content:query}]);
-
-  try{
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        model:"claude-sonnet-4-6",
-        max_tokens:1000,
-        system: sys,
-        messages: convo
-      })
-    });
-    const data = await resp.json();
-    let answer = "Sorry, I couldn't generate a response.";
-    if(data && data.content){
-      answer = data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    }
-    thinking.querySelector('.bubble').innerHTML = formatAnswer(answer);
-    history.push({role:'user', content:query});
-    history.push({role:'assistant', content:answer});
-  }catch(err){
-    thinking.querySelector('.bubble').innerHTML = 'Something went wrong reaching the archive assistant. Please try again.';
-    console.error(err);
-  }finally{
-    askBtn.disabled = false;
-    chatEl.scrollTop = chatEl.scrollHeight;
-  }
-}
-
-function formatAnswer(text){
-  let esc = escapeHtml(text);
-  esc = esc.replace(/\[p\.(\d+)\]/g, '<span class="cite">[p.$1]</span>');
-  esc = esc.replace(/\n/g, '<br>');
-  return esc;
-}
-</script>
-</body>
-</html>
+  const context = results.map((r,i)=>`[Passage ${i+1} — ${r.chunk.docName}, p.${r.chunk.page}]\n${r.c
