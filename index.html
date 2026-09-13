@@ -67,7 +67,7 @@
   /* ---------- Upload / shelf ---------- */
   .desk{ background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px; margin-bottom:22px; position:relative; }
   .desk::before{ content:""; position:absolute; top:8px; left:8px; right:8px; bottom:8px; border:1px solid rgba(156,122,60,.25); border-radius:2px; pointer-events:none; }
-  .drop{ border:1.5px dashed var(--rule); border-radius:3px; padding:26px 16px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
+  .drop{ display:block; width:100%; border:1.5px dashed var(--rule); border-radius:3px; padding:26px 16px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
   .drop:hover, .drop.drag{ border-color:var(--brass); background:rgba(156,122,60,.06); }
   .drop .lbl{ font-family:'Fraunces', serif; font-size:18px; }
   .drop .hint{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin-top:6px; letter-spacing:.03em; }
@@ -179,14 +179,26 @@
   .modal h4{ font-family:'Fraunces', serif; margin-top:0; }
   .modal button{ margin-top:14px; font-family:'IBM Plex Mono', monospace; font-size:11px; background:var(--ink); color:var(--paper); border:none; border-radius:3px; padding:8px 14px; cursor:pointer; }
 
-  footer.credit{ max-width:1080px; margin:52px auto 0; padding:24px 20px 10px; text-align:center; }
+  footer.credit{ max-width:1080px; margin:40px auto 0; padding:24px 20px 10px; text-align:center; }
   footer.credit .rule{ width:64px; height:1px; background:var(--rule); margin:0 auto 16px; }
-  footer.credit .name{ font-family:'Fraunces', serif; font-style:italic; font-size:15px; color:var(--ink); margin:0 0 6px; }
+  footer.credit .name{ font-family:'Fraunces', serif; font-style:italic; font-size:15px; color:var(--ink); margin:0 0 12px; }
   footer.credit .name strong{ font-style:normal; font-weight:600; }
-  footer.credit .links{ font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.03em; color:var(--ink-soft); margin:0; }
+  footer.credit .links{ display:flex; flex-direction:column; align-items:center; gap:8px; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.03em; color:var(--ink-soft); margin:0; }
   footer.credit .links a{ color:var(--brass); text-decoration:none; }
   footer.credit .links a:hover{ color:var(--burgundy); text-decoration:underline; }
-  footer.credit .links .dot{ color:var(--rule); margin:0 7px; }
+
+  /* ---------- support section ---------- */
+  .support{ max-width:1080px; margin:36px auto 0; padding:0 20px; }
+  .support .card{ background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px; }
+  .support h2{ font-family:'Fraunces', serif; font-size:19px; font-weight:600; margin:0 0 14px; }
+  .support .steps{ margin:0 0 16px; padding-left:20px; font-size:13.5px; line-height:1.7; color:var(--ink); }
+  .support .steps li{ margin-bottom:4px; }
+  .support .trouble{ border-top:1px dashed var(--rule); padding-top:14px; margin-top:4px; }
+  .support .trouble h3{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--brass); margin:0 0 8px; }
+  .support .trouble ul{ margin:0 0 16px; padding-left:20px; font-size:13px; line-height:1.7; color:var(--ink-soft); }
+  .support .contact{ font-size:13.5px; color:var(--ink-soft); }
+  .support .contact a{ color:var(--brass); text-decoration:none; }
+  .support .contact a:hover{ color:var(--burgundy); text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -202,11 +214,11 @@
   </header>
 
   <section class="desk">
-    <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload documents">
+    <label class="drop" id="drop" for="file" tabindex="0">
       <div class="lbl">Drop PDFs or text files here, or tap to browse</div>
       <div class="hint">TEXT IS EXTRACTED, CHUNKED &amp; INDEXED LOCALLY — NOTHING LEAVES YOUR BROWSER</div>
-      <input type="file" id="file" accept="application/pdf,.pdf,.txt,text/plain" multiple />
-    </div>
+      <input type="file" id="file" accept=".pdf,.txt" multiple />
+    </label>
 
     <div class="shelf" id="shelf"></div>
 
@@ -249,14 +261,34 @@
   </section>
 </div>
 
+<section class="support">
+  <div class="card">
+    <h2>Support &amp; help</h2>
+    <ol class="steps">
+      <li>Tap the upload box (or drag a file onto it) and choose one or more PDF or .txt files — under 20MB each.</li>
+      <li>Wait for each file to show a page/word count on its spine — that means it's indexed.</li>
+      <li>Type a question in the box at the bottom of the chat panel and tap <strong>ASK</strong>. The answer, with citations, appears above the chat.</li>
+      <li>Tap any passage in the "Catalog Drawer" on the left to read it in full.</li>
+    </ol>
+    <div class="trouble">
+      <h3>If something isn't working</h3>
+      <ul>
+        <li>Upload only accepts <strong>.pdf</strong> and <strong>.txt</strong> files — anything else is skipped with a message at the top of the screen.</li>
+        <li>Scanned/image-only PDFs have no selectable text, so nothing gets indexed from them.</li>
+        <li>If a file won't upload, try reloading the page once — a slow connection can stop the PDF engine from loading in time.</li>
+        <li>Your documents and chat stay in this browser only — reinstalling the app or clearing browser data will reset it. Use <strong>Reset session</strong> (top right) to start fresh anytime.</li>
+      </ul>
+    </div>
+    <p class="contact">Still stuck? Reach out directly — <a href="mailto:nikhilsriramoju66@gmail.com">nikhilsriramoju66@gmail.com</a></p>
+  </div>
+</section>
+
 <footer class="credit">
   <div class="rule"></div>
-  <p class="name">Built by <strong>NIKHIL CHARY SRIRAMOJU</strong></p>
+  <p class="name">Built by <strong>NIKHIL👑CHARY S✨RIRAMOJU</strong></p>
   <p class="links">
     <a href="https://github.com/Nikhil-creat" target="_blank" rel="noopener">GitHub</a>
-    <span class="dot">·</span>
     <a href="https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a" target="_blank" rel="noopener">LinkedIn</a>
-    <span class="dot">·</span>
     <a href="mailto:nikhilsriramoju66@gmail.com">nikhilsriramoju66@gmail.com</a>
   </p>
 </footer>
@@ -297,78 +329,4 @@
   // ---------------- state ----------------
   let docs = [];       // {id, name, pages, words}
   let chunks = [];      // {docName, page, text, vec, norm}
-  let df = new Map();
-  let N = 0;
-  let history = [];     // {role, content}
-
-  const STOP = new Set("a an the is are was were be been being of to in on for and or but with as at by from this that these those it its into over under again further then once here there all any both each few more most other some such no nor not only own same so than too very can will just don should now i you he she they we what which who whom".split(" "));
-
-  function tokenize(text){
-    return (text.toLowerCase().match(/[a-z0-9]+/g) || []).filter(t => t.length>1 && !STOP.has(t));
-  }
-
-  function splitSentences(text){
-    return (text.match(/[^.!?]+[.!?]*/g) || [text]).map(s=>s.trim()).filter(Boolean);
-  }
-
-  function chunkText(fullText, size){
-    const overlap = Math.round(size*0.15);
-    const out = [];
-    let i = 0;
-    while(i < fullText.length){
-      out.push(fullText.slice(i, i+size));
-      i += Math.max(1, size - overlap);
-    }
-    return out;
-  }
-
-  function rebuildIndex(){
-    df = new Map();
-    for(const c of chunks){
-      const terms = new Set(tokenize(c.text));
-      for(const t of terms) df.set(t, (df.get(t)||0)+1);
-    }
-    N = chunks.length;
-    for(const c of chunks){
-      const toks = tokenize(c.text);
-      const tf = new Map();
-      for(const t of toks) tf.set(t, (tf.get(t)||0)+1);
-      let norm = 0;
-      const vec = new Map();
-      for(const [t, f] of tf){
-        const idf = Math.log((N+1)/((df.get(t)||1)+0.5));
-        const w = f * idf;
-        vec.set(t, w);
-        norm += w*w;
-      }
-      c.vec = vec;
-      c.norm = Math.sqrt(norm) || 1e-9;
-    }
-    document.getElementById('chunkCount').textContent = chunks.length;
-    document.getElementById('docCount').textContent = docs.length;
-    saveSession();
-  }
-
-  function scoreQuery(query, k){
-    const toks = tokenize(query);
-    const tf = new Map();
-    for(const t of toks) tf.set(t, (tf.get(t)||0)+1);
-    const qvec = new Map();
-    let qnorm = 0;
-    for(const [t,f] of tf){
-      const idf = Math.log((N+1)/((df.get(t)||1)+0.5));
-      const w = f*idf;
-      qvec.set(t, w);
-      qnorm += w*w;
-    }
-    qnorm = Math.sqrt(qnorm) || 1e-9;
-    const scored = chunks.map(c => {
-      let dot = 0;
-      for(const [t,w] of qvec){ if(c.vec.has(t)) dot += w * c.vec.get(t); }
-      return {chunk:c, sim: dot / (qnorm * c.norm)};
-    });
-    scored.sort((a,b)=>b.sim-a.sim);
-    return scored.slice(0,k);
-  }
-
-  // ---------------- agentic pip
+  let df = ne
